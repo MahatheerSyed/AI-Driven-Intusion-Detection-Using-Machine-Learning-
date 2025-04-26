@@ -1,0 +1,80 @@
+
+@app.route('/bot_io', methods=['GET', 'POST'])
+def bot_io():
+    if 'username' not in session:
+        return redirect(url_for('signin'))
+
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if not file or file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        if allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+
+            file_hash = get_file_hash(filepath)
+            if file_hash in prediction_cache:
+                return jsonify(prediction_cache[file_hash])
+
+            try:
+                if filename.endswith('.csv'):
+                    data = pd.read_csv(filepath)
+                elif filename.endswith('.xls'):
+                    data = pd.read_excel(filepath, engine='xlrd')
+                elif filename.endswith('.xlsx'):
+                    data = pd.read_excel(filepath, engine='openpyxl')
+                elif filename.endswith('.sav'):
+                    with SavReader(filepath) as reader:
+                        data = pd.DataFrame(reader.all(), columns=reader.header)
+                else:
+                    return jsonify({'error': 'Unsupported file format'}), 400
+
+                # ---------------- FIXED SECTION ----------------
+                expected_features = [
+                    'pkSeqID', 'proto', 'saddr', 'daddr', 'pkts', 'bytes', 'state',
+                    'dur', 'mean', 'sum', 'min', 'spkts', 'sbytes', 'rate', 'srate'
+                ]
+
+                missing_cols = [col for col in expected_features if col not in data.columns]
+                if missing_cols:
+                    return jsonify({'error': f'Missing columns: {missing_cols}'}), 400
+
+                data = data[expected_features]
+
+                # Encode categorical columns (assuming during training they were label encoded)
+                categorical_cols = ['proto', 'saddr', 'daddr', 'state']
+                for col in categorical_cols:
+                    data[col] = data[col].astype('category').cat.codes
+
+                # Replace NaNs or infs
+                data.replace([np.inf, -np.inf], np.nan, inplace=True)
+                data.fillna(0, inplace=True)
+
+                # Make predictions
+                predictions = model.predict(data)
+                data['Prediction'] = ['Normal' if pred == 0 else 'Attack' for pred in predictions]
+
+                result = []
+                for index, row in data.iterrows():
+                    result.append({
+                        'source_ip': row.get('saddr', 'N/A'),
+                        'dest_ip': row.get('daddr', 'N/A'),
+                        'protocol': row.get('proto', 'N/A'),
+                        'packets': row.get('pkts', 0),
+                        'bytes': row.get('bytes', 0),
+                        'duration': row.get('dur', 0),
+                        'prediction': row['Prediction']
+                    })
+
+                prediction_cache[file_hash] = {'predictions': result}
+                print(result)
+                return jsonify({'predictions': result})
+
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+        else:
+            return jsonify({'error': 'Invalid file format'}), 400
+
+    return render_template('bot_io.html')

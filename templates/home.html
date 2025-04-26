@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home - AI-Driven Intrusion Detection</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="logo">
+          <div class="logo-icon">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <span>CloudGuard AI</span>
+        </div>
+        <nav>
+          <ul>
+            <li><a href="/home" class="active">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle">Predictions</a>
+              <ul class="dropdown-menu">
+                <li><a href="/home1">NSL-KDD Analysis</a></li>
+                <li><a href="/home2">BOT-IOT Analysis</a></li>
+                <li><a href="/kddcup">NSL -KDD File Analysis</a></li>
+                <li><a href="/bot_io">BOT-IOT File Analysis</a></li>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle">Notebooks</a>
+              <ul class="dropdown-menu">
+                <li><a href="/NSL-KDD">NSL-KDD Notebook</a></li>
+                <li><a href="/Bot_IoT2">BOT-IOT Notebook</a></li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="welcome-banner">
+        <h1>Welcome, <span id="welcomeUserName">John</span>!</h1>
+        <p>
+          Choose a dataset to analyze and detect intrusions in your cloud
+          environment.
+        </p>
+      </div>
+
+      <div class="dataset-cards">
+        <div class="dataset-card">
+          <div class="dataset-icon">
+            <i class="fas fa-network-wired"></i>
+          </div>
+          <div class="dataset-info">
+            <h3>BoT-IoT Dataset</h3>
+            <p>
+              Analyze IoT network traffic to detect botnet attacks and other
+              intrusions.
+            </p>
+            <ul class="dataset-features">
+              <li><i class="fas fa-check"></i> IoT device traffic</li>
+              <li><i class="fas fa-check"></i> Botnet detection</li>
+              <li><i class="fas fa-check"></i> DDoS attack analysis</li>
+            </ul>
+            <div class="dataset-actions">
+              <a href="/home2" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+                Manual Analysis
+              </a>
+              <a href="/bot_io" class="btn btn-primary">
+                <i class="fas fa-file-upload"></i>
+                File Analysis
+              </a>
+              <a href="/Bot_IoT2" class="btn btn-secondary">
+                <i class="fas fa-book"></i>
+                View Notebook
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="dataset-card">
+          <div class="dataset-icon">
+            <i class="fas fa-server"></i>
+          </div>
+          <div class="dataset-info">
+            <h3>NSL -KDD Dataset</h3>
+            <p>
+              Analyze network connections to detect various types of intrusions
+              and attacks.
+            </p>
+            <ul class="dataset-features">
+              <li><i class="fas fa-check"></i> Network connections</li>
+              <li><i class="fas fa-check"></i> Multiple attack types</li>
+              <li><i class="fas fa-check"></i> Protocol analysis</li>
+            </ul>
+            <div class="dataset-actions">
+              <a href="/home1" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+                Manual Analysis
+              </a>
+              <a href="/kddcup" class="btn btn-primary">
+                <i class="fas fa-file-upload"></i>
+                File Analysis
+              </a>
+              <a href="/NSL-KDD" class="btn btn-secondary">
+                <i class="fas fa-book"></i>
+                View Notebook
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-stats">
+        <h2>System Overview</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Security Status</h3>
+              <p class="stat-value good">Protected</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Recent Alerts</h3>
+              <p class="stat-value">12</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Model Accuracy</h3>
+              <p class="stat-value">97.8%</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Last Scan</h3>
+              <p class="stat-value">2 hours ago</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 CloudGuard AI. All rights reserved.</p>
+    </footer>
+
+    <style>
+      .dropdown {
+        position: relative;
+        display: inline-block;
+      }
+
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        z-index: 1;
+      }
+
+      .dropdown:hover .dropdown-menu {
+        display: block;
+      }
+
+      .dropdown-menu li {
+        padding: 8px 16px;
+      }
+
+      .dropdown-menu li:hover {
+        background-color: #f5f5f5;
+      }
+
+      .dataset-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .btn-secondary {
+        background-color: #64748b;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: background-color 0.2s;
+      }
+
+      .btn-secondary:hover {
+        background-color: #475569;
+      }
+
+      .dataset-card {
+        margin-bottom: 2rem;
+      }
+    </style>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const user = JSON.parse(localStorage.getItem("user")) || {
+          name: "User",
+        };
+
+        document.getElementById("welcomeUserName").textContent =
+          user.name.split(" ")[0];
+      });
+    </script>
+  </body>
+</html>

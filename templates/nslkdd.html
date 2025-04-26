@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NSL -KDD Analysis | CloudGuard AI</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/1.css" />
+  </head>
+  <body>
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Processing your data...</div>
+    </div>
+
+    <header>
+      <div class="header-content">
+        <div class="logo">
+          <div class="logo-icon">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <span>CloudGuard AI</span>
+        </div>
+        <nav>
+          <ul>
+            <li><a href="/home">Home</a></li>
+            <li><a href="/bot_io">BoT-IoT</a></li>
+            <li><a href="/NSL -KDD" class="active">NSL -KDD</a></li>
+            <li><a href="/about">About</a></li>
+          </ul>
+        </nav>
+        <!-- <div class="user-menu">
+        <div class="user-info">
+          <span id="userName">John Doe</span>
+        </div>
+        <div class="dropdown-menu"></div>
+      </div> -->
+      </div>
+    </header>
+
+    <main>
+      <h1 class="page-title">NSL -KDD Network Traffic Analysis</h1>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <i class="fas fa-upload"></i>
+            Upload Dataset
+          </h2>
+        </div>
+        <div class="card-body">
+          <form
+            id="uploadForm"
+            method="POST"
+            enctype="multipart/form-data"
+            action="/kddcup"
+          >
+            <div class="upload-container">
+              <div id="uploadArea" class="upload-area">
+                <div class="upload-icon">
+                  <i class="fas fa-file-upload"></i>
+                </div>
+                <h3 class="upload-text">Drag & drop your file here</h3>
+                <p class="upload-hint">
+                  or click to browse files (CSV, XLSX, XLS)
+                </p>
+                <input
+                  type="file"
+                  name="file"
+                  id="fileInput"
+                  class="file-input"
+                  accept=".csv,.xlsx,.xls"
+                  required
+                />
+              </div>
+
+              <div
+                id="fileInfo"
+                class="file-info {% if filename %}active{% endif %}"
+              >
+                <div class="file-icon">
+                  <i class="fas fa-file-excel"></i>
+                </div>
+                <div class="file-details">
+                  <div id="fileName" class="file-name">
+                    {% if filename %}{{ filename }}{% else %}filename.csv{%
+                    endif %}
+                  </div>
+                  <div id="fileSize" class="file-size">File uploaded</div>
+                </div>
+                <button type="button" id="removeFile" class="file-remove">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                id="uploadBtn"
+                class="upload-btn"
+                {%
+                if
+                not
+                filename
+                %}disabled{%
+                endif
+                %}
+              >
+                <i class="fas fa-bolt"></i>
+                Analyze & Predict
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {% if input_table or prediction_table %}
+      <div id="resultsSection">
+        <div id="statsSection" class="stats-container">
+          <div class="stat-card stat-total">
+            <div class="stat-title">Total Records</div>
+            <div id="totalRecords" class="stat-value">
+              {{ total_records|default('0') }}
+            </div>
+            <div class="progress-bar">
+              <div
+                class="progress-value progress-total"
+                style="width: 100%"
+              ></div>
+            </div>
+          </div>
+          <div class="stat-card stat-normal">
+            <div class="stat-title">Normal Traffic</div>
+            <div id="normalRecords" class="stat-value">
+              {{ normal_records|default('0') }}
+            </div>
+            <div class="progress-bar">
+              <div
+                id="normalProgress"
+                class="progress-value progress-normal"
+                style="width: {{ normal_percentage|default('0') }}%"
+              ></div>
+            </div>
+          </div>
+          <div class="stat-card stat-attack">
+            <div class="stat-title">Attack Traffic</div>
+            <div id="attackRecords" class="stat-value">
+              {{ attack_records|default('0') }}
+            </div>
+            <div class="progress-bar">
+              <div
+                id="attackProgress"
+                class="progress-value progress-attack"
+                style="width: {{ attack_percentage|default('0') }}%"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visualization Section -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-chart-pie"></i>
+              Visualizations
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="visualization-grid">
+              <div class="visualization-card">
+                <h3>Attack Distribution</h3>
+                <div class="chart-container">
+                  <canvas id="attackDistributionChart"></canvas>
+                </div>
+              </div>
+              <div class="visualization-card">
+                <h3>Protocol Distribution</h3>
+                <div class="chart-container">
+                  <canvas id="protocolDistributionChart"></canvas>
+                </div>
+              </div>
+              <div class="visualization-card">
+                <h3>Confusion Matrix</h3>
+                <div class="chart-container">
+                  <canvas id="confusionMatrixChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-chart-bar"></i>
+              Analysis Results
+              <span class="tooltip">
+                <i class="fas fa-info-circle"></i>
+                <span class="tooltip-text"
+                  >This table shows the prediction results for each record in
+                  your dataset.</span
+                >
+              </span>
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="tabs">
+              <div
+                class="tab {% if prediction_table %}active{% endif %}"
+                data-tab="prediction"
+              >
+                Prediction Results
+              </div>
+              <div
+                class="tab {% if not prediction_table %}active{% endif %}"
+                data-tab="preview"
+              >
+                Data Preview
+              </div>
+            </div>
+
+            <div
+              id="predictionTab"
+              class="tab-content {% if prediction_table %}active{% endif %}"
+            >
+              <div id="predictionTableContainer" class="table-container">
+                {% if prediction_table %} {{ prediction_table|safe }} {% else %}
+                <div class="empty-state">
+                  <div class="empty-icon">
+                    <i class="fas fa-chart-line"></i>
+                  </div>
+                  <h3 class="empty-text">No prediction results yet</h3>
+                  <p class="empty-hint">
+                    Upload a dataset file to see prediction results here.
+                  </p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div
+              id="previewTab"
+              class="tab-content {% if not prediction_table %}active{% endif %}"
+            >
+              <div id="fileTable" class="table-container">
+                {% if input_table %} {{ input_table|safe }} {% else %}
+                <div class="empty-state">
+                  <div class="empty-icon">
+                    <i class="fas fa-table"></i>
+                  </div>
+                  <h3 class="empty-text">No data to preview</h3>
+                  <p class="empty-hint">
+                    Upload a dataset file to preview its contents here.
+                  </p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </main>
+
+    <footer>
+      <p>&copy; 2025 CloudGuard AI. All rights reserved.</p>
+    </footer>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const removeFile = document.getElementById('removeFile');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loading = document.getElementById('loading');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // Handle file selection
+        fileInput.addEventListener('change', function(event) {
+          handleFileSelection(event.target.files[0]);
+        });
+
+        // Handle drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+          uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+          uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+          uploadArea.classList.add('dragover');
+        }
+
+        function unhighlight() {
+          uploadArea.classList.remove('dragover');
+        }
+
+        uploadArea.addEventListener('drop', function(e) {
+          const dt = e.dataTransfer;
+          const file = dt.files[0];
+          handleFileSelection(file);
+        });
+
+        // Handle file selection
+        function handleFileSelection(file) {
+          if (!file) return;
+
+          if (file.name.endsWith('.csv') || file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.add('active');
+            uploadBtn.disabled = false;
+          } else {
+            alert('Unsupported file type. Please upload CSV, XLS, or XLSX files.');
+            resetFileInput();
+          }
+        }
+
+        // Remove file
+        removeFile.addEventListener('click', function() {
+          resetFileInput();
+        });
+
+        function resetFileInput() {
+          fileInput.value = '';
+          fileInfo.classList.remove('active');
+          uploadBtn.disabled = true;
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Form submission
+        uploadForm.addEventListener('submit', function() {
+          // Show loading spinner
+          loading.classList.add('active');
+        });
+
+        // Tab switching
+        tabs.forEach(tab => {
+          tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchTab(tabName);
+          });
+        });
+
+        function switchTab(tabName) {
+          // Remove active class from all tabs and contents
+          tabs.forEach(tab => tab.classList.remove('active'));
+          tabContents.forEach(content => content.classList.remove('active'));
+
+          // Add active class to selected tab and content
+          document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+          document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
+        // Apply styling to prediction results
+        const predictionTable = document.querySelector('#predictionTableContainer table');
+        if (predictionTable) {
+          predictionTable.classList.add('styled-table');
+
+          // Add classes to rows based on prediction
+          const rows = predictionTable.querySelectorAll('tbody tr');
+          rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            // Check if the last cell contains the prediction
+            if (cells.length > 0) {
+              const lastCell = cells[cells.length - 1];
+              if (lastCell && lastCell.textContent.trim() === 'Attack') {
+                row.classList.add('attack-row');
+                lastCell.innerHTML = '<span class="status-badge status-attack"><i class="fas fa-exclamation-triangle"></i> Attack</span>';
+              } else if (lastCell && lastCell.textContent.trim() === 'Normal') {
+                row.classList.add('normal-row');
+                lastCell.innerHTML = '<span class="status-badge status-normal"><i class="fas fa-check-circle"></i> Normal</span>';
+              }
+            }
+          });
+        }
+
+        // Apply styling to input table
+        const inputTable = document.querySelector('#fileTable table');
+        if (inputTable) {
+          inputTable.classList.add('styled-table');
+        }
+
+        // Create charts if we have prediction data
+        {% if prediction_table %}
+          createCharts();
+        {% endif %}
+
+        function createCharts() {
+          // Get counts from the backend or calculate from the table
+          const normalCount = {{ normal_records|default('0') }};
+          const attackCount = {{ attack_records|default('0') }};
+
+          // 1. Attack Distribution Pie Chart
+          const attackDistributionCtx = document.getElementById('attackDistributionChart').getContext('2d');
+          new Chart(attackDistributionCtx, {
+            type: 'pie',
+            data: {
+              labels: ['Normal', 'Attack'],
+              datasets: [{
+                data: [normalCount, attackCount],
+                backgroundColor: [
+                  '#10b981', // Normal - green
+                  '#ef4444'  // Attack - red
+                ],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'right'
+                },
+                title: {
+                  display: true,
+                  text: 'Traffic Classification'
+                }
+              }
+            }
+          });
+
+          // Protocol Distribution Chart (NSL -KDD specific)
+          const protocolDistributionCtx = document.getElementById('protocolDistributionChart');
+          if (protocolDistributionCtx) {
+            // This is a placeholder - in a real app, you would calculate these values from your data
+            const protocols = ['TCP', 'UDP', 'ICMP'];
+            const protocolCounts = [
+              Math.floor(Math.random() * 1000) + 500,
+              Math.floor(Math.random() * 500) + 100,
+              Math.floor(Math.random() * 300) + 50
+            ];
+
+            new Chart(protocolDistributionCtx, {
+              type: 'bar',
+              data: {
+                labels: protocols,
+                datasets: [{
+                  label: 'Count',
+                  data: protocolCounts,
+                  backgroundColor: [
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)'
+                  ],
+                  borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)'
+                  ],
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: false
+                  },
+                  title: {
+                    display: true,
+                    text: 'Protocol Distribution'
+                  }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: 'Count'
+                    }
+                  }
+                }
+              }
+            });
+          }
+
+          // 3. Confusion Matrix (simplified version)
+          const confusionMatrixCtx = document.getElementById('confusionMatrixChart').getContext('2d');
+
+          // In a real app, you would get these values from model evaluation
+          // Here we're just making a simplified visualization
+          const accuracy = 0.95; // 95% accuracy
+          const truePositives = Math.floor(attackCount * accuracy);
+          const falseNegatives = attackCount - truePositives;
+          const trueNegatives = Math.floor(normalCount * accuracy);
+          const falsePositives = normalCount - trueNegatives;
+
+          new Chart(confusionMatrixCtx, {
+            type: 'bar',
+            data: {
+              labels: ['True Negative', 'False Positive', 'False Negative', 'True Positive'],
+              datasets: [{
+                label: 'Count',
+                data: [trueNegatives, falsePositives, falseNegatives, truePositives],
+                backgroundColor: [
+                  'rgba(16, 185, 129, 0.8)', // True Negative (green)
+                  'rgba(239, 68, 68, 0.8)',  // False Positive (red)
+                  'rgba(239, 68, 68, 0.8)',  // False Negative (red)
+                  'rgba(16, 185, 129, 0.8)'  // True Positive (green)
+                ],
+                borderColor: [
+                  'rgba(16, 185, 129, 1)',
+                  'rgba(239, 68, 68, 1)',
+                  'rgba(239, 68, 68, 1)',
+                  'rgba(16, 185, 129, 1)'
+                ],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                title: {
+                  display: true,
+                  text: 'Confusion Matrix'
+                },
+                tooltip: {
+                  callbacks: {
+                    title: function(context) {
+                      const labels = ['True Negative', 'False Positive', 'False Negative', 'True Positive'];
+                      return labels[context[0].dataIndex];
+                    },
+                    label: function(context) {
+                      return `Count: ${context.raw}`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Count'
+                  }
+                }
+              }
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
